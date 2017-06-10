@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-public class ExampleModule2 : MonoBehaviour
+public class WifiModModule : MonoBehaviour
 {
     public KMSelectable[] buttons;
     KMAudio.KMAudioRef audioRef;

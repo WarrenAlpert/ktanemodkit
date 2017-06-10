@@ -166,9 +166,9 @@ public class WifiModWebService : MonoBehaviour
 
     public class Worker
     {
-        ExampleWebService service;
+        WifiModWebService service;
 
-        public Worker(ExampleWebService s)
+        public Worker(WifiModWebService s)
         {
             service = s;
         }
