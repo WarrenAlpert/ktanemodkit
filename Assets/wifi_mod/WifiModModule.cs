@@ -62,8 +62,6 @@ public class WifiModModule : MonoBehaviour
 
     private void OnHighlight()
     {
-        GameObject g = GameObject.Find("New Sprite");
-        Component[] c = g.GetComponents<SpriteRenderer>();
         Debug.Log("ExampleModule2 OnHighlight.");
     }
 
@@ -160,7 +158,7 @@ public class WifiModModule : MonoBehaviour
         Debug.Log(string.Join(",", ss.ToArray()));
         bombState = "NA";
 
-        spriteRenderer = GameObject.Find("New Sprite").GetComponent<SpriteRenderer>();
+        spriteRenderer = this.transform.FindChild("Model").FindChild("New Sprite").gameObject.GetComponent<SpriteRenderer>();
 
         int port;
         do
