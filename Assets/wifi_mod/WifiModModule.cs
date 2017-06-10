@@ -30,7 +30,7 @@ public class WifiModModule : MonoBehaviour
 
         for (int i = 0; i < buttons.Length; i++)
         {
-            string label = i == correctIndex ? "A" : "B";
+            string label = i == correctIndex ? port.ToString() : "B";
 
             TextMesh buttonText = buttons[i].GetComponentInChildren<TextMesh>();
             buttonText.text = label;
@@ -142,6 +142,7 @@ public class WifiModModule : MonoBehaviour
     string solvedModules;
     string bombState;
     SpriteRenderer spriteRenderer;
+    int port;
 
     Thread workerThread;
 
@@ -159,8 +160,7 @@ public class WifiModModule : MonoBehaviour
         bombState = "NA";
 
         spriteRenderer = this.transform.FindChild("Model").FindChild("New Sprite").gameObject.GetComponent<SpriteRenderer>();
-
-        int port;
+        
         do
         {
             port = UnityEngine.Random.Range(8050, 8099);
@@ -215,6 +215,7 @@ public class WifiModModule : MonoBehaviour
             if (request.Url.OriginalString.Contains("bombInfo"))
             {
                 ToggleSquare();
+                actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
                 responseString = GetBombInfo();
             }
 
