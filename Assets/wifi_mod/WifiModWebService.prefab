@@ -14,7 +14,7 @@ GameObject:
   - 114: {fileID: 11454842}
   - 114: {fileID: 11498466}
   m_Layer: 0
-  m_Name: ExampleWebService
+  m_Name: WifiModWebService
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
