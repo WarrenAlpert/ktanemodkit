@@ -62,6 +62,8 @@ public class WifiModModule : MonoBehaviour
 
     private void OnHighlight()
     {
+        GameObject g = GameObject.Find("New Sprite");
+        Component[] c = g.GetComponents<SpriteRenderer>();
         Debug.Log("ExampleModule2 OnHighlight.");
     }
 
@@ -95,10 +97,24 @@ public class WifiModModule : MonoBehaviour
         return true;
     }
 
+    void ToggleSquare()
+    {
+        if (spriteRenderer.color == Color.white)
+        {
+            spriteRenderer.color = Color.clear;
+        }
+        else
+        {
+            spriteRenderer.color = Color.white;
+        }
+    }
+
     //On pressing button a looped sound will play
     void OnPress(bool correctButton)
     {
         Debug.Log("Pressed " + correctButton + " button");
+
+        ToggleSquare();
 
         if (correctButton)
         {
@@ -127,6 +143,7 @@ public class WifiModModule : MonoBehaviour
     string solvableModules;
     string solvedModules;
     string bombState;
+    SpriteRenderer spriteRenderer;
 
     Thread workerThread;
 
@@ -142,8 +159,21 @@ public class WifiModModule : MonoBehaviour
         List<string> ss = bombInfo.GetModuleNames();
         Debug.Log(string.Join(",", ss.ToArray()));
         bombState = "NA";
+
+        spriteRenderer = GameObject.Find("New Sprite").GetComponent<SpriteRenderer>();
+
+        int port;
+        do
+        {
+            port = UnityEngine.Random.Range(8050, 8099);
+        }
+        while (usedPorts.Contains(port));
+
+        usedPorts.Add(port);
+        Debug.Log("usedPorts adding: " + port + ", count: " + usedPorts.Count);
+
         // Create the thread object. This does not start the thread.
-        Worker workerObject = new Worker(this);
+        Worker workerObject = new Worker(this, port);
         workerThread = new Thread(workerObject.DoWork);
         // Start the worker thread.
         workerThread.Start(this);
@@ -186,6 +216,7 @@ public class WifiModModule : MonoBehaviour
 
             if (request.Url.OriginalString.Contains("bombInfo"))
             {
+                ToggleSquare();
                 responseString = GetBombInfo();
             }
 
@@ -284,24 +315,17 @@ public class WifiModModule : MonoBehaviour
     public class Worker
     {
         WifiModModule service;
+        int port;
 
-        public Worker(WifiModModule s)
+        public Worker(WifiModModule s, int port)
         {
             service = s;
+            this.port = port;
         }
 
         // This method will be called when the thread is started. 
         public void DoWork()
         {
-            int port;
-            do
-            {
-                port = UnityEngine.Random.Range(8050, 8099);
-            }
-            while (usedPorts.Contains(port));
-
-            usedPorts.Add(port);
-            Debug.Log("usedPorts adding: " + port + ", count: " + usedPorts.Count);
             service.SimpleListenerExample(new string[] { "http://*:" + port + "/" });
         }
     }
