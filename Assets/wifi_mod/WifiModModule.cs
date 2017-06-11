@@ -4,136 +4,11 @@ using Newtonsoft.Json;
 using System.Net;
 using System.Threading;
 using System;
+using System.Linq;
 
 public class WifiModModule : MonoBehaviour
 {
     public static List<int> usedPorts = new List<int>();
-    public KMSelectable[] buttons;
-    KMAudio.KMAudioRef audioRef;
-    int correctIndex;
-
-    void Start()
-    {
-        Init();
-    }
-
-    void Init()
-    {
-        correctIndex = UnityEngine.Random.Range(0, 4);
-        GetComponent<KMBombModule>().OnActivate += OnActivate;
-        GetComponent<KMSelectable>().OnCancel += OnCancel;
-        GetComponent<KMSelectable>().OnLeft += OnLeft;
-        GetComponent<KMSelectable>().OnLeft += OnRight;
-        GetComponent<KMSelectable>().OnSelect += OnSelect;
-        GetComponent<KMSelectable>().OnDeselect += OnDeselect;
-        GetComponent<KMSelectable>().OnHighlight += OnHighlight;
-
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            string label = i == correctIndex ? port.ToString() : "B";
-
-            TextMesh buttonText = buttons[i].GetComponentInChildren<TextMesh>();
-            buttonText.text = label;
-            int j = i;
-            buttons[i].OnInteract += delegate () { Debug.Log("Press #" + j); OnPress(j == correctIndex); return false; };
-            buttons[i].OnInteractEnded += OnRelease;
-        }
-    }
-
-    private void OnDeselect()
-    {
-        Debug.Log("ExampleModule2 OnDeselect.");
-    }
-
-    private void OnLeft()
-    {
-        Debug.Log("ExampleModule2 OnLeft.");
-    }
-
-    private void OnRight()
-    {
-        Debug.Log("ExampleModule2 OnRight.");
-    }
-
-    private void OnSelect()
-    {
-        Debug.Log("ExampleModule2 OnSelect.");
-    }
-
-    private void OnHighlight()
-    {
-        Debug.Log("ExampleModule2 OnHighlight.");
-    }
-
-    void OnActivate()
-    {
-        foreach (string query in new List<string> { KMBombInfo.QUERYKEY_GET_BATTERIES, KMBombInfo.QUERYKEY_GET_INDICATOR, KMBombInfo.QUERYKEY_GET_PORTS, KMBombInfo.QUERYKEY_GET_SERIAL_NUMBER, "example"})
-        {
-            List<string> queryResponse = GetComponent<KMBombInfo>().QueryWidgets(query, null);
-
-            if (queryResponse.Count > 0)
-            {
-                Debug.Log(queryResponse[0]);
-            }
-        }
-
-        int batteryCount = 0;
-        List<string> responses = GetComponent<KMBombInfo>().QueryWidgets(KMBombInfo.QUERYKEY_GET_BATTERIES, null);
-        foreach (string response in responses)
-        {
-            Dictionary<string, int> responseDict = JsonConvert.DeserializeObject<Dictionary<string, int>>(response);
-            batteryCount += responseDict["numbatteries"];
-        }
-
-        Debug.Log("Battery count: " + batteryCount);
-    }
-
-    bool OnCancel()
-    {
-        Debug.Log("ExampleModule2 cancel.");
-
-        return true;
-    }
-
-    void ToggleSquare()
-    {
-        if (spriteRenderer.color == Color.white)
-        {
-            spriteRenderer.color = Color.clear;
-        }
-        else
-        {
-            spriteRenderer.color = Color.white;
-        }
-    }
-
-    //On pressing button a looped sound will play
-    void OnPress(bool correctButton)
-    {
-        Debug.Log("Pressed " + correctButton + " button");
-
-        ToggleSquare();
-
-        if (correctButton)
-        {
-            audioRef = GetComponent<KMAudio>().PlayGameSoundAtTransformWithRef(KMSoundOverride.SoundEffect.AlarmClockBeep, transform);
-            GetComponent<KMBombModule>().HandlePass();
-        }
-        else
-        {
-            audioRef = GetComponent<KMAudio>().PlaySoundAtTransformWithRef("doublebeep125loop", transform);
-        }
-    }
-
-    //On releasing a button a looped sound will stop
-    void OnRelease()
-    {
-        Debug.Log("OnInteractEnded Released");
-        if(audioRef != null && audioRef.StopSound != null)
-        {
-            audioRef.StopSound();
-        }
-    }
 
     KMBombInfo bombInfo;
     KMGameCommands gameCommands;
@@ -142,11 +17,28 @@ public class WifiModModule : MonoBehaviour
     string solvedModules;
     string bombState;
     SpriteRenderer spriteRenderer;
+    TextMesh connectionText;
     int port;
 
     Thread workerThread;
 
     Queue<Action> actions;
+
+    void Start()
+    {
+        Init();
+    }
+
+    void Init()
+    {
+        GetComponent<KMBombModule>().OnActivate += OnActivate;
+    }
+
+    void OnActivate()
+    {
+        connectionText = this.transform.FindChild("Model").FindChild("ConnectionBackground").GetComponentInChildren<TextMesh>();
+        connectionText.text = Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
+    }
 
     void Awake()
     {
@@ -159,8 +51,6 @@ public class WifiModModule : MonoBehaviour
         Debug.Log(string.Join(",", ss.ToArray()));
         bombState = "NA";
 
-        spriteRenderer = this.transform.FindChild("Model").FindChild("New Sprite").gameObject.GetComponent<SpriteRenderer>();
-        
         do
         {
             port = UnityEngine.Random.Range(8050, 8099);
@@ -214,7 +104,6 @@ public class WifiModModule : MonoBehaviour
 
             if (request.Url.OriginalString.Contains("bombInfo"))
             {
-                ToggleSquare();
                 actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
                 responseString = GetBombInfo();
             }
