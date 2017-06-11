@@ -10,15 +10,9 @@ public class WifiModModule : MonoBehaviour
 {
     public static List<int> usedPorts = new List<int>();
 
-    KMBombInfo bombInfo;
-    KMGameCommands gameCommands;
-    string modules;
-    string solvableModules;
-    string solvedModules;
-    string bombState;
-    SpriteRenderer spriteRenderer;
     TextMesh connectionText;
     int port;
+    bool gameOver = false;
 
     Thread workerThread;
 
@@ -43,13 +37,6 @@ public class WifiModModule : MonoBehaviour
     void Awake()
     {
         actions = new Queue<Action>();
-        bombInfo = GetComponent<KMBombInfo>();
-        bombInfo.OnBombExploded += OnBombExplodes;
-        bombInfo.OnBombSolved += OnBombDefused;
-        gameCommands = GetComponent<KMGameCommands>();
-        List<string> ss = bombInfo.GetModuleNames();
-        Debug.Log(string.Join(",", ss.ToArray()));
-        bombState = "NA";
 
         do
         {
@@ -102,23 +89,16 @@ public class WifiModModule : MonoBehaviour
             // Construct a response.
             string responseString = "";
 
-            if (request.Url.OriginalString.Contains("bombInfo"))
+            if (!gameOver && !request.Url.OriginalString.Contains("favicon"))
             {
-                actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
-                responseString = GetBombInfo();
-            }
-
-            if (request.Url.OriginalString.Contains("startMission"))
-            {
-                string missionId = request.QueryString.Get("missionId");
-                string seed = request.QueryString.Get("seed");
-                responseString = StartMission(missionId, seed);
-            }
-
-            if (request.Url.OriginalString.Contains("causeStrike"))
-            {
-                string reason = request.QueryString.Get("reason");
-                responseString = CauseStrike(reason);
+                if (request.Url.OriginalString.Contains("p"))
+                {
+                    actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
+                }
+                else
+                {
+                    actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandleStrike(); });
+                }
             }
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
@@ -131,73 +111,14 @@ public class WifiModModule : MonoBehaviour
         }
     }
 
-    protected string StartMission(string missionId, string seed)
-    {
-        actions.Enqueue(delegate () { gameCommands.StartMission(missionId, seed); });
-
-        return missionId + " " + seed;
-    }
-
-    protected string CauseStrike(string reason)
-    {
-        actions.Enqueue(delegate () { gameCommands.CauseStrike(reason); });
-
-        return reason;
-    }
-
-    protected string GetBombInfo()
-    {
-        if (bombInfo.IsBombPresent())
-        {
-            if (bombState == "NA")
-            {
-                bombState = "Active";
-            }
-        }
-        else if (bombState == "Active")
-        {
-            bombState = "NA";
-        }
-
-        string time = bombInfo.GetFormattedTime();
-        int strikes = bombInfo.GetStrikes();
-        modules = GetListAsHTML(bombInfo.GetModuleNames());
-        solvableModules = GetListAsHTML(bombInfo.GetSolvableModuleNames());
-        solvedModules = GetListAsHTML(bombInfo.GetSolvedModuleNames());
-
-        string responseString = string.Format(
-            "<HTML><BODY>"
-            + "<span>Time: {0}</span><br>"
-            + "<span>Strikes: {1}</span><br>"
-            + "<span>Modules: {2}</span><br>"
-            + "<span>Solvable Modules: {3}</span><br>"
-            + "<span>Solved Modules: {4}</span><br>"
-            + "<span>State: {5}</span><br>"
-            + "</BODY></HTML>", time, strikes, modules, solvableModules, solvedModules, bombState);
-
-        return responseString;
-    }
-
     protected void OnBombExplodes()
     {
-        bombState = "Exploded";
+        gameOver = true;
     }
 
     protected void OnBombDefused()
     {
-        bombState = "Defused";
-    }
-
-    protected string GetListAsHTML(List<string> list)
-    {
-        string listString = "";
-
-        foreach (string s in list)
-        {
-            listString += s + ", ";
-        }
-
-        return listString;
+        gameOver = true;
     }
 
     public class Worker
