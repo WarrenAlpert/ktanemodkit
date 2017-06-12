@@ -194,7 +194,7 @@ public class WifiModModule : MonoBehaviour
         }
         else
         {
-            this.connectionText.color = Color.blue;
+            this.connectionText.color = Color.white;
             GetComponent<KMBombModule>().HandlePass();
         }
     }
