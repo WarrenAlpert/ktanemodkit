@@ -275,7 +275,7 @@ public class WifiModModule : MonoBehaviour
         {
             allowedDirections.Add(Direction.Left);
         }
-        if (GetMoveDestination(fromPosition, Direction.Up).R <= NumRows - 1)
+        if (GetMoveDestination(fromPosition, Direction.Down).R <= NumRows - 1)
         {
             allowedDirections.Add(Direction.Down);
         }
@@ -390,7 +390,13 @@ public class WifiModModule : MonoBehaviour
             if (gameActive && !request.Url.OriginalString.Contains("favicon"))
             {
                 Dictionary<string, string> queryStrings = new Dictionary<string, string>();
-                foreach (string fullQueryString in request.Url.Query.Split('&'))
+                string query = request.Url.Query;
+                if (query.Length > 1)
+                {
+                    // Leading '?'
+                    query = query.Substring(1);
+                }
+                foreach (string fullQueryString in query.Split('&'))
                 {
                     string[] split = fullQueryString.Split('=');
                     if (split.Length != 2)
@@ -433,7 +439,10 @@ public class WifiModModule : MonoBehaviour
                         {
                             if (string.Equals(move, possibleDirection.ToString(), StringComparison.OrdinalIgnoreCase))
                             {
-                                actions.Enqueue(delegate () { ChangeDronePosition(selectedDrone, possibleDirection); });
+                                if (GetAllowedMoves(this.dronePositions[selectedDrone]).Contains(possibleDirection))
+                                {
+                                    actions.Enqueue(delegate () { ChangeDronePosition(selectedDrone, possibleDirection); });
+                                }
                                 break;
                             }
                         }
@@ -451,7 +460,10 @@ public class WifiModModule : MonoBehaviour
                     }
                 }
 
-                responseString += selectedDrone.ToString() + " " + move ?? "(no move)" + " " + jam ?? "(no jam)";
+                responseString +=
+                    selectedDrone.ToString() + " " +
+                    (move != null && move.Count() > 0 ? move : "(no move)") + " " +
+                    (jam != null && jam.Count() > 0 ? jam : "(no jam)");
             }
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
