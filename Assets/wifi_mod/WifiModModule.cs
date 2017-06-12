@@ -111,25 +111,39 @@ public class WifiModModule : MonoBehaviour
 
         foreach (KeyValuePair<DroneName, Position> droneToPosition in this.dronePositions)
         {
-            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponentInChildren<TextMesh>().text = !on ? "" : droneToPosition.Key.ToString();
-            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponent<SpriteRenderer>().color = !on ? Color.white : Color.clear;
+            UpdateDotText(droneToPosition.Value, !on ? "" : droneToPosition.Key.ToString());
+            UpdateDotColor(droneToPosition.Value, !on ? Color.white : Color.clear);
         }
     }
 
     void ChangeDronePosition(DroneName droneName, Direction direction)
     {
+        UpdateDotColor(this.dronePositions[droneName], Color.white);
+        UpdateDotText(this.dronePositions[droneName], "");
         this.dronePositions[droneName] = GetMoveDestination(this.dronePositions[droneName], direction);
+        UpdateDotText(this.dronePositions[droneName], droneName.ToString());
+        UpdateDotColor(this.dronePositions[droneName], Color.clear);
 
         EvaluateCollisions();
+    }
+
+    private void UpdateDotColor(Position position, Color color)
+    {
+        this.dots[position.r, position.c].GetComponent<SpriteRenderer>().color = color;
+    }
+
+    private void UpdateDotText(Position position, string text)
+    {
+        this.dots[position.r, position.c].GetComponentInChildren<TextMesh>().text = text;
     }
 
     private void ChangeBomberPosition()
     {
         HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition);
 
-        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
+        UpdateDotColor(this.bomberPosition, Color.white);
         this.bomberPosition = GetMoveDestination(this.bomberPosition, possibleMoves.ElementAt(random.Next(0, possibleMoves.Count)));
-        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
+        UpdateDotColor(this.bomberPosition, Color.red);
 
         EvaluateCollisions();
     }
