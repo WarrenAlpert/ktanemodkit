@@ -8,7 +8,18 @@ using System.Linq;
 
 public class WifiModModule : MonoBehaviour
 {
+    const int NumRows = 4;
+    const int NumColumns = 6;
+
     public static List<int> usedPorts = new List<int>();
+    Transform droneMap;
+    Transform[,] dots;
+    Dictionary<string, Position> positions = new Dictionary<string, Position> {
+        { "a", new Position{ r = 0, c = 0 } },
+        { "b", new Position{ r = 0, c = 1 } },
+        { "c", new Position{ r = 1, c = 0 } },
+        { "d", new Position{ r = 1, c = 1 } },
+    };
 
     TextMesh connectionText;
     int port;
@@ -47,9 +58,10 @@ public class WifiModModule : MonoBehaviour
         connectionText = this.transform.FindChild("Model").FindChild("ConnectionBackground").GetComponentInChildren<TextMesh>();
         connectionText.text = !on ? "" : Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
 
-        TextMesh m = this.transform.FindChild("Model").FindChild("DroneMap").FindChild("1,1").GetComponentInChildren<TextMesh>();
-        m.text = !on ? "" : "A";
-
+        foreach (KeyValuePair<string, Position> droneToPosition in this.positions)
+        {
+            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponentInChildren<TextMesh>().text = !on ? "" : droneToPosition.Key.ToUpperInvariant();
+        }
     }
 
     void Awake()
@@ -61,6 +73,17 @@ public class WifiModModule : MonoBehaviour
             port = UnityEngine.Random.Range(8050, 8099);
         }
         while (usedPorts.Contains(port));
+
+        this.droneMap = this.transform.FindChild("Model").FindChild("DroneMap");
+        this.dots = new Transform[NumRows, NumColumns];
+
+        for (int r = 0; r < NumRows; r++)
+        {
+            for (int c = 0; c < NumColumns; c++)
+            {
+                this.dots[r, c] = this.droneMap.FindChild((r + 1) + "," + (c + 1));
+            }
+        }
 
         usedPorts.Add(port);
         Debug.Log("usedPorts adding: " + port + ", count: " + usedPorts.Count);
@@ -137,6 +160,12 @@ public class WifiModModule : MonoBehaviour
     protected void OnBombDefused()
     {
         gameOver = true;
+    }
+
+    struct Position
+    {
+        public int r;
+        public int c;
     }
 
     public class Worker
