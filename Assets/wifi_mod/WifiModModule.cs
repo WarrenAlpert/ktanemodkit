@@ -10,18 +10,29 @@ public class WifiModModule : MonoBehaviour
 {
     const int NumRows = 4;
     const int NumColumns = 6;
+    enum DroneName
+    {
+        A,
+        B,
+        C,
+        D
+    }
 
     public static List<int> usedPorts = new List<int>();
     Transform droneMap;
     Transform[,] dots;
-    Dictionary<string, Position> positions = new Dictionary<string, Position> {
-        { "a", new Position{ r = 0, c = 0 } },
-        { "b", new Position{ r = 0, c = 1 } },
-        { "c", new Position{ r = 1, c = 0 } },
-        { "d", new Position{ r = 1, c = 1 } },
+
+    Dictionary<DroneName, Position> dronePositions = new Dictionary<DroneName, Position> {
+        { DroneName.A, new Position{ r = 0, c = 0 } },
+        { DroneName.B, new Position{ r = 0, c = 1 } },
+        { DroneName.C, new Position{ r = 1, c = 0 } },
+        { DroneName.D, new Position{ r = 1, c = 1 } },
     };
 
+    Position bomberPosition;
+
     TextMesh connectionText;
+    string ipAndPort;
     int port;
     bool gameOver = false;
 
@@ -55,13 +66,18 @@ public class WifiModModule : MonoBehaviour
 
     public void OnLightChange(bool on)
     {
-        connectionText = this.transform.FindChild("Model").FindChild("ConnectionBackground").GetComponentInChildren<TextMesh>();
-        connectionText.text = !on ? "" : Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
+        this.connectionText.text = !on ? "" : ipAndPort;
 
-        foreach (KeyValuePair<string, Position> droneToPosition in this.positions)
+        foreach (KeyValuePair<DroneName, Position> droneToPosition in this.dronePositions)
         {
-            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponentInChildren<TextMesh>().text = !on ? "" : droneToPosition.Key.ToUpperInvariant();
+            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponentInChildren<TextMesh>().text = !on ? "" : droneToPosition.Key.ToString();
+            this.dots[droneToPosition.Value.r, droneToPosition.Value.c].GetComponent<SpriteRenderer>().color = !on ? Color.white : Color.clear;
         }
+    }
+
+    void ChangePosition(DroneName droneName, Direction direction)
+    {
+
     }
 
     void Awake()
@@ -76,6 +92,8 @@ public class WifiModModule : MonoBehaviour
 
         this.droneMap = this.transform.FindChild("Model").FindChild("DroneMap");
         this.dots = new Transform[NumRows, NumColumns];
+        this.ipAndPort = Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
+        this.connectionText = this.transform.FindChild("Model").FindChild("ConnectionBackground").GetComponentInChildren<TextMesh>();
 
         for (int r = 0; r < NumRows; r++)
         {
@@ -84,6 +102,14 @@ public class WifiModModule : MonoBehaviour
                 this.dots[r, c] = this.droneMap.FindChild((r + 1) + "," + (c + 1));
             }
         }
+
+        bomberPosition = new Position
+        {
+            r = UnityEngine.Random.Range(2, NumRows - 1),
+            c = UnityEngine.Random.Range(2, NumColumns - 1),
+        };
+
+        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
 
         usedPorts.Add(port);
         Debug.Log("usedPorts adding: " + port + ", count: " + usedPorts.Count);
@@ -132,11 +158,13 @@ public class WifiModModule : MonoBehaviour
 
             if (!gameOver && !request.Url.OriginalString.Contains("favicon"))
             {
+                actions.Enqueue(delegate () { this.connectionText.color = Color.green; });
+
                 if (request.Url.OriginalString.Contains("p"))
                 {
                     actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
                 }
-                else
+                else if (request.Url.OriginalString.Contains("s"))
                 {
                     actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandleStrike(); });
                 }
@@ -166,6 +194,14 @@ public class WifiModModule : MonoBehaviour
     {
         public int r;
         public int c;
+    }
+
+    enum Direction
+    {
+        Left,
+        Right,
+        Up,
+        Down
     }
 
     public class Worker
