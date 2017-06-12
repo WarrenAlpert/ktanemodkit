@@ -389,6 +389,8 @@ public class WifiModModule : MonoBehaviour
 
             if (gameActive && !request.Url.OriginalString.Contains("favicon"))
             {
+                responseString += "<html><body>";
+
                 Dictionary<string, string> queryStrings = new Dictionary<string, string>();
                 string query = request.Url.Query;
                 if (query.Length > 1)
@@ -461,9 +463,29 @@ public class WifiModModule : MonoBehaviour
                 }
 
                 responseString +=
-                    selectedDrone.ToString() + " " +
-                    (move != null && move.Count() > 0 ? move : "(no move)") + " " +
-                    (jam != null && jam.Count() > 0 ? jam : "(no jam)");
+                    "<b>Selected Drone:</b> " + selectedDrone.ToString() + " " +
+                    "<b>Last Move:</b> " + (move != null && move.Count() > 0 ? move : "(no move)") + " " +
+                    "<b>Jam Fired?:</b> " + (jam != null && jam.Count() > 0 ? jam : "(no jam)") +
+                    "<br/><br/><b>Drones</b><br/>";
+
+                foreach (DroneName droneName in Enum.GetValues(typeof(DroneName)))
+                {
+                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&drone=" + droneName.ToString() + "\">" + droneName.ToString() + "</a><br/>";
+                }
+
+                responseString += "<br/><b>Controls:</b><br/>";
+                foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+                {
+                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&drone=" + selectedDrone.ToString() + "&move=" + direction.ToString() + "\">" + direction.ToString() + "</a><br/>";
+                }
+
+                responseString += "<br/><b>Fire Jammer!</b><br/>";
+                foreach (JamType jamType in JamTypes.All())
+                {
+                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&jam=" + jamType.DisplayName + "\">" + jamType.DisplayName + "</a><br/>";
+                }
+
+                responseString += "</body></html>";
             }
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
