@@ -175,7 +175,17 @@ public class WifiModModule : MonoBehaviour
 
     void Jam(JamType jamType)
     {
-
+        List<DroneName> drones = this.DroneCapabilities[jamType];
+        
+        if (jamType.DisplayName != this.correctJamType.DisplayName || !PointInTriangle(this.bomberPosition, this.dronePositions[drones[0]], this.dronePositions[drones[1]], this.dronePositions[drones[2]]))
+        {
+            CauseStrike();
+        }
+        else
+        {
+            this.connectionText.color = Color.blue;
+            GetComponent<KMBombModule>().HandlePass();
+        }
     }
 
     private void UpdateDotColor(Position position, Color color)
