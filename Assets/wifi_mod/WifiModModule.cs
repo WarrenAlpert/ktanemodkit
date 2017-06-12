@@ -22,16 +22,12 @@ public class WifiModModule : MonoBehaviour
     Transform droneMap;
     Transform[,] dots;
 
-    Dictionary<DroneName, Position> dronePositions = new Dictionary<DroneName, Position> {
-        { DroneName.A, new Position{ r = 0, c = 0 } },
-        { DroneName.B, new Position{ r = 0, c = 1 } },
-        { DroneName.C, new Position{ r = 1, c = 0 } },
-        { DroneName.D, new Position{ r = 1, c = 1 } },
-    };
+    Dictionary<DroneName, Position> dronePositions;
 
     Position bomberPosition;
 
     TextMesh connectionText;
+    Color connectionTextColor;
     string ipAndPort;
     int port;
     bool gameOver = false;
@@ -47,7 +43,8 @@ public class WifiModModule : MonoBehaviour
 
     void Init()
     {
-        GetComponent<KMBombModule>().OnActivate += OnActivate;
+        GetComponent<KMBombModule>().OnActivate += OnActivateCaller;
+
         KMGameplayRoom room = GetComponent<KMGameplayRoom>();
         if (room != null)
         {
@@ -55,13 +52,46 @@ public class WifiModModule : MonoBehaviour
         }
     }
 
-    void OnActivate()
+    void OnActivateCaller()
     {
-        // Running in test harness
-        if (GetComponent<KMGameplayRoom>() == null)
+        // (callOnLightChange) == (Running in test harness)
+        OnReset(GetComponent<KMGameplayRoom>() == null);
+    }
+
+    void OnReset(bool callOnLightChange)
+    {
+        this.connectionText.color = connectionTextColor;
+        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
+
+        this.dronePositions = new Dictionary<DroneName, Position>
+                                {
+                                    { DroneName.A, new Position{ r = 0, c = 0 } },
+                                    { DroneName.B, new Position{ r = 0, c = 1 } },
+                                    { DroneName.C, new Position{ r = 1, c = 0 } },
+                                    { DroneName.D, new Position{ r = 1, c = 1 } },
+                                };
+
+        UnityEngine.Random.InitState(bomberPosition.r);
+        bomberPosition = new Position
+        {
+            r = UnityEngine.Random.Range(2, NumRows - 1),
+            c = UnityEngine.Random.Range(2, NumColumns - 1),
+        };
+
+        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
+
+        if (callOnLightChange)
         {
             OnLightChange(true);
         }
+    }
+
+    void CauseStrike()
+    {
+        OnLightChange(false);
+        OnReset(true);
+
+        GetComponent<KMBombModule>().HandleStrike();
     }
 
     public void OnLightChange(bool on)
@@ -83,6 +113,7 @@ public class WifiModModule : MonoBehaviour
     void Awake()
     {
         actions = new Queue<Action>();
+        this.connectionTextColor = Color.yellow;
 
         do
         {
@@ -102,15 +133,7 @@ public class WifiModModule : MonoBehaviour
                 this.dots[r, c] = this.droneMap.FindChild((r + 1) + "," + (c + 1));
             }
         }
-
-        bomberPosition = new Position
-        {
-            r = UnityEngine.Random.Range(2, NumRows - 1),
-            c = UnityEngine.Random.Range(2, NumColumns - 1),
-        };
-
-        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
-
+        
         usedPorts.Add(port);
         Debug.Log("usedPorts adding: " + port + ", count: " + usedPorts.Count);
 
@@ -158,15 +181,19 @@ public class WifiModModule : MonoBehaviour
 
             if (!gameOver && !request.Url.OriginalString.Contains("favicon"))
             {
-                actions.Enqueue(delegate () { this.connectionText.color = Color.green; });
+                if (this.connectionTextColor != Color.green)
+                {
+                    this.connectionTextColor = Color.green;
+                    actions.Enqueue(delegate () { this.connectionText.color = Color.green; });
+                }
 
-                if (request.Url.OriginalString.Contains("p"))
+                if (request.Url.OriginalString.Contains("/p"))
                 {
                     actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
                 }
-                else if (request.Url.OriginalString.Contains("s"))
+                else if (request.Url.OriginalString.Contains("/s"))
                 {
-                    actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandleStrike(); });
+                    actions.Enqueue(delegate () { CauseStrike(); });
                 }
             }
 
