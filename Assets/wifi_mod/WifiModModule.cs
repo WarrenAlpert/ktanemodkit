@@ -12,7 +12,9 @@ public class WifiModModule : MonoBehaviour
     const int NumColumns = 6;
 
     // In seconds
-    const float BomberMoveInterval = 10;
+    float StartingBomberMoveInterval = 10;
+    float BomberMoveIntervalStrikePenalty = 3;
+    float BombererMoveIntervalMin = 4;
 
     enum DroneName
     {
@@ -32,6 +34,10 @@ public class WifiModModule : MonoBehaviour
     public static List<int> usedPorts = new List<int>();
     Transform droneMap;
     Transform[,] dots;
+    string serialNumber;
+
+    HashSet<char> vowels = new HashSet<char> { 'A', 'E', 'I', 'O', 'U' };
+    HashSet<char> oddNums = new HashSet<char> { '1', '3', '5', '7', '9' };
 
     Dictionary<DroneName, Position> dronePositions;
 
@@ -43,6 +49,8 @@ public class WifiModModule : MonoBehaviour
     int port;
     bool gameActive = false;
     float bomberMoveTimeRemaining;
+    JamType correctJamType;
+    bool bomberRunning;
 
     System.Random random;
     Thread workerThread;
@@ -75,7 +83,28 @@ public class WifiModModule : MonoBehaviour
 
     void OnReset(bool callOnLightChange)
     {
-        bomberMoveTimeRemaining = BomberMoveInterval;
+        this.bomberRunning = true;
+        bomberMoveTimeRemaining = StartingBomberMoveInterval;
+
+        List<string> queryList = GetComponent<KMBombInfo>().QueryWidgets(KMBombInfo.QUERYKEY_GET_SERIAL_NUMBER, null);
+        serialNumber = queryList.Count == 1 ? queryList[0].Replace("\"}", "").Split('"').Last() : "TZST12";
+
+        if (this.oddNums.Contains(serialNumber[5]))
+        {
+            this.correctJamType = JamTypes.TwoG;
+        }
+        else
+        {
+            this.correctJamType = JamTypes.FourG;
+
+            foreach (char c in serialNumber)
+            {
+                if (this.vowels.Contains(c))
+                {
+                    this.correctJamType = JamTypes.ThreeG;
+                }
+            }
+        }
 
         this.connectionText.color = connectionTextColor;
         this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
@@ -106,6 +135,11 @@ public class WifiModModule : MonoBehaviour
 
     void CauseStrike()
     {
+        if (StartingBomberMoveInterval - BomberMoveIntervalStrikePenalty >= BombererMoveIntervalMin)
+        {
+            StartingBomberMoveInterval -= BomberMoveIntervalStrikePenalty;
+        }
+
         OnLightChange(false);
         OnReset(true);
 
@@ -134,6 +168,8 @@ public class WifiModModule : MonoBehaviour
         UpdateDotColor(this.dronePositions[droneName], Color.clear);
 
         EvaluateCollisions();
+
+        this.bomberRunning = true;
     }
 
     private void UpdateDotColor(Position position, Color color)
@@ -237,7 +273,7 @@ public class WifiModModule : MonoBehaviour
         {
             allowedDirections.Add(Direction.Down);
         }
-        if (GetMoveDestination(fromPosition, Direction.Right).r <= NumColumns - 1)
+        if (GetMoveDestination(fromPosition, Direction.Right).c <= NumColumns - 1)
         {
             allowedDirections.Add(Direction.Right);
         }
@@ -288,12 +324,12 @@ public class WifiModModule : MonoBehaviour
             action();
         }
 
-        if (gameActive)
+        if (this.gameActive && this.bomberRunning)
         {
             bomberMoveTimeRemaining -= Time.deltaTime;
             if (bomberMoveTimeRemaining <= 0)
             {
-                bomberMoveTimeRemaining = BomberMoveInterval;
+                bomberMoveTimeRemaining = StartingBomberMoveInterval;
                 ChangeBomberPosition();
             }
         }
