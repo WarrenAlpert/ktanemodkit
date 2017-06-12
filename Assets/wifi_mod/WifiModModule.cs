@@ -56,7 +56,7 @@ public class WifiModModule : MonoBehaviour
     Thread workerThread;
 
     Queue<Action> actions;
-
+    
     void Start()
     {
         Init();
@@ -107,25 +107,25 @@ public class WifiModModule : MonoBehaviour
         }
 
         this.connectionText.color = connectionTextColor;
-        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
+        this.dots[this.bomberPosition.R, this.bomberPosition.C].GetComponent<SpriteRenderer>().color = Color.white;
 
         this.dronePositions = new Dictionary<DroneName, Position>
                                 {
-                                    { DroneName.A, new Position{ r = 0, c = 0 } },
-                                    { DroneName.B, new Position{ r = 0, c = 1 } },
-                                    { DroneName.C, new Position{ r = 1, c = 0 } },
-                                    { DroneName.D, new Position{ r = 1, c = 1 } },
+                                    { DroneName.A, new Position{ R = 0, C = 0 } },
+                                    { DroneName.B, new Position{ R = 0, C = 1 } },
+                                    { DroneName.C, new Position{ R = 1, C = 0 } },
+                                    { DroneName.D, new Position{ R = 1, C = 1 } },
                                 };
 
         int row = random.Next(0, NumRows);
 
         bomberPosition = new Position
         {
-            r = row,
-            c = random.Next(row < 3 ? 3 : 0, NumColumns),
+            R = row,
+            C = random.Next(row < 3 ? 3 : 0, NumColumns),
         };
 
-        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
+        this.dots[this.bomberPosition.R, this.bomberPosition.C].GetComponent<SpriteRenderer>().color = Color.red;
 
         if (callOnLightChange)
         {
@@ -174,12 +174,12 @@ public class WifiModModule : MonoBehaviour
 
     private void UpdateDotColor(Position position, Color color)
     {
-        this.dots[position.r, position.c].GetComponent<SpriteRenderer>().color = color;
+        this.dots[position.R, position.C].GetComponent<SpriteRenderer>().color = color;
     }
 
     private void UpdateDotText(Position position, string text)
     {
-        this.dots[position.r, position.c].GetComponentInChildren<TextMesh>().text = text;
+        this.dots[position.R, position.C].GetComponentInChildren<TextMesh>().text = text;
     }
 
     private void ChangeBomberPosition()
@@ -200,7 +200,7 @@ public class WifiModModule : MonoBehaviour
         {
             Position position = this.dronePositions[droneName];
 
-            if (position.r == bomberPosition.r && position.c == bomberPosition.c)
+            if (position.R == bomberPosition.R && position.C == bomberPosition.C)
             {
                 CauseStrike();
                 return;
@@ -215,7 +215,7 @@ public class WifiModModule : MonoBehaviour
 
                 Position otherPosition = this.dronePositions[otherDroneName];
 
-                if (position.r == otherPosition.r && position.c == otherPosition.c)
+                if (position.R == otherPosition.R && position.C == otherPosition.C)
                 {
                     CauseStrike();
                     return;
@@ -231,26 +231,26 @@ public class WifiModModule : MonoBehaviour
             case (Direction.Up):
                 return new Position
                 {
-                    r = fromPosition.r - 1,
-                    c = fromPosition.c
+                    R = fromPosition.R - 1,
+                    C = fromPosition.C
                 };
             case (Direction.Down):
                 return new Position
                 {
-                    r = fromPosition.r + 1,
-                    c = fromPosition.c
+                    R = fromPosition.R + 1,
+                    C = fromPosition.C
                 };
             case (Direction.Left):
                 return new Position
                 {
-                    r = fromPosition.r,
-                    c = fromPosition.c - 1
+                    R = fromPosition.R,
+                    C = fromPosition.C - 1
                 };
             case (Direction.Right):
                 return new Position
                 {
-                    r = fromPosition.r,
-                    c = fromPosition.c + 1
+                    R = fromPosition.R,
+                    C = fromPosition.C + 1
                 };
             default:
                 throw new ArgumentOutOfRangeException("Unexpected direction to move in.");
@@ -261,19 +261,19 @@ public class WifiModModule : MonoBehaviour
     {
         HashSet<Direction> allowedDirections = new HashSet<Direction>();
 
-        if (GetMoveDestination(fromPosition, Direction.Up).r >= 0)
+        if (GetMoveDestination(fromPosition, Direction.Up).R >= 0)
         {
             allowedDirections.Add(Direction.Up);
         }
-        if (GetMoveDestination(fromPosition, Direction.Left).c >= 0)
+        if (GetMoveDestination(fromPosition, Direction.Left).C >= 0)
         {
             allowedDirections.Add(Direction.Left);
         }
-        if (GetMoveDestination(fromPosition, Direction.Up).r <= NumRows - 1)
+        if (GetMoveDestination(fromPosition, Direction.Up).R <= NumRows - 1)
         {
             allowedDirections.Add(Direction.Down);
         }
-        if (GetMoveDestination(fromPosition, Direction.Right).c <= NumColumns - 1)
+        if (GetMoveDestination(fromPosition, Direction.Right).C <= NumColumns - 1)
         {
             allowedDirections.Add(Direction.Right);
         }
@@ -340,6 +340,26 @@ public class WifiModModule : MonoBehaviour
         workerThread.Abort();
     }
 
+    // Stolen from: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
+    private bool PointInTriangle(Position bomber, Position p0, Position p1, Position p2)
+    {
+        var s = p0.C * p2.R - p0.R * p2.C + (p2.C - p0.C) * bomber.R + (p0.R - p2.R) * bomber.C;
+        var t = p0.R * p1.C - p0.C * p1.R + (p0.C - p1.C) * bomber.R + (p1.R - p0.R) * bomber.C;
+
+        if ((s < 0) != (t < 0))
+            return false;
+
+        var A = -p1.C * p2.R + p0.C * (p2.R - p1.R) + p0.R * (p1.C - p2.C) + p1.R * p2.C;
+        if (A < 0.0)
+        {
+            s = -s;
+            t = -t;
+            A = -A;
+        }
+        return s > 0 && t > 0 && (s + t) <= A;
+    }
+
+
     // This example requires the System and System.Net namespaces.
     public void SimpleListenerExample(string[] prefixes)
     {
@@ -401,8 +421,8 @@ public class WifiModModule : MonoBehaviour
 
     struct Position
     {
-        public int r;
-        public int c;
+        public int R;
+        public int C;
     }
 
     enum Direction
