@@ -9,9 +9,9 @@ using System.Linq;
 public class WifiModModule : MonoBehaviour
 {
     // In seconds
-    float StartingBomberMoveInterval = 10;
-    float BomberMoveIntervalStrikePenalty = 3;
-    float BombererMoveIntervalMin = 4;
+    float StartingBomberMoveInterval = 12;
+    float BomberMoveIntervalStrikePenalty = 4;
+    float BomberMoveIntervalMin = 4;
 
     int BomberDistanceFromEdges = 1;
 
@@ -122,12 +122,12 @@ public class WifiModModule : MonoBehaviour
                                     { DroneName.D, new Position{ R = 1, C = 1 } },
                                 };
 
-        int row = random.Next(0, NumRows);
+        int row = random.Next(BomberDistanceFromEdges, NumRows);
 
         bomberPosition = new Position
         {
-            R = row,
-            C = random.Next(row < 3 ? 3 : 0, NumColumns),
+            R = row - BomberDistanceFromEdges,
+            C = random.Next(row < 3 ? 3 : BomberDistanceFromEdges, NumColumns - BomberDistanceFromEdges),
         };
 
         this.dots[this.bomberPosition.R, this.bomberPosition.C].GetComponent<SpriteRenderer>().color = Color.red;
@@ -140,9 +140,13 @@ public class WifiModModule : MonoBehaviour
 
     void CauseStrike()
     {
-        if (StartingBomberMoveInterval - BomberMoveIntervalStrikePenalty >= BombererMoveIntervalMin)
+        if (StartingBomberMoveInterval - BomberMoveIntervalStrikePenalty >= BomberMoveIntervalMin)
         {
             StartingBomberMoveInterval -= BomberMoveIntervalStrikePenalty;
+        }
+        else
+        {
+            StartingBomberMoveInterval = BomberMoveIntervalMin;
         }
 
         OnLightChange(false);
@@ -184,7 +188,7 @@ public class WifiModModule : MonoBehaviour
     {
         List<DroneName> drones = this.DroneCapabilities[jamType];
         
-        if (jamType.DisplayName != this.correctJamType.DisplayName || !PointInTriangle(this.bomberPosition, this.dronePositions[drones[0]], this.dronePositions[drones[1]], this.dronePositions[drones[2]]))
+        if (jamType.DisplayName != this.correctJamType.DisplayName || !PointInOrOnTriangle(this.bomberPosition, this.dronePositions[drones[0]], this.dronePositions[drones[1]], this.dronePositions[drones[2]]))
         {
             CauseStrike();
         }
@@ -292,11 +296,11 @@ public class WifiModModule : MonoBehaviour
         {
             allowedDirections.Add(Direction.Left);
         }
-        if (GetMoveDestination(fromPosition, Direction.Down).R <= NumRows - (1 - (isBomber ? BomberDistanceFromEdges : 0)))
+        if (GetMoveDestination(fromPosition, Direction.Down).R <= NumRows - (1 + (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Down);
         }
-        if (GetMoveDestination(fromPosition, Direction.Right).C <= NumColumns - (1 - (isBomber ? BomberDistanceFromEdges : 0)))
+        if (GetMoveDestination(fromPosition, Direction.Right).C <= NumColumns - (1 + (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Right);
         }
@@ -361,6 +365,30 @@ public class WifiModModule : MonoBehaviour
     void OnDestroy()
     {
         workerThread.Abort();
+    }
+
+    private bool PointInOrOnTriangle(Position bomber, Position p0, Position p1, Position p2)
+    {
+        if (PointOnLineSegment(bomber, p0, p1) || PointOnLineSegment(bomber, p0, p2) || PointOnLineSegment(bomber, p1, p2))
+        {
+            return true;
+        }
+
+        bool onTriangle = PointInTriangle(bomber, p0, p1, p2);
+        return onTriangle;
+    }
+
+    private bool PointOnLineSegment(Position bomber, Position p0, Position p1)
+    {
+        var AB = Math.Sqrt((p1.R - p0.R) * (p1.R - p0.R) + (p1.C - p0.C) * (p1.C - p0.C));
+        var AP = Math.Sqrt((bomber.R - p0.R) * (bomber.R - p0.R) + (bomber.C - p0.C) * (bomber.C - p0.C));
+        var PB = Math.Sqrt((p1.R - bomber.R) * (p1.R - bomber.R) + (p1.C - bomber.C) * (p1.C - bomber.C));
+        if (AB == AP + PB)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // Stolen from: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
