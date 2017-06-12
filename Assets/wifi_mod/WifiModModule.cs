@@ -35,6 +35,7 @@ public class WifiModModule : MonoBehaviour
     Transform droneMap;
     Transform[,] dots;
     string serialNumber;
+    int attemptNumber = 0;
 
     HashSet<char> vowels = new HashSet<char> { 'A', 'E', 'I', 'O', 'U' };
     HashSet<char> oddNums = new HashSet<char> { '1', '3', '5', '7', '9' };
@@ -83,6 +84,8 @@ public class WifiModModule : MonoBehaviour
 
     void OnReset(bool callOnLightChange)
     {
+        attemptNumber++;
+
         this.bomberRunning = true;
         bomberMoveTimeRemaining = StartingBomberMoveInterval;
 
@@ -146,8 +149,6 @@ public class WifiModModule : MonoBehaviour
         GetComponent<KMBombModule>().HandleStrike();
     }
 
-
-
     public void OnLightChange(bool on)
     {
         this.connectionText.text = !on ? "" : ipAndPort;
@@ -170,6 +171,11 @@ public class WifiModModule : MonoBehaviour
         EvaluateCollisions();
 
         this.bomberRunning = true;
+    }
+
+    void Jam(JamType jamType)
+    {
+
     }
 
     private void UpdateDotColor(Position position, Color color)
@@ -383,20 +389,69 @@ public class WifiModModule : MonoBehaviour
 
             if (gameActive && !request.Url.OriginalString.Contains("favicon"))
             {
+                Dictionary<string, string> queryStrings = new Dictionary<string, string>();
+                foreach (string fullQueryString in request.Url.Query.Split('&'))
+                {
+                    string[] split = fullQueryString.Split('=');
+                    if (split.Length != 2)
+                    {
+                        continue;
+                    }
+
+                    queryStrings.Add(split[0], split[1]);
+                }
+
                 if (this.connectionTextColor != Color.green)
                 {
                     this.connectionTextColor = Color.green;
                     actions.Enqueue(delegate () { this.connectionText.color = Color.green; });
                 }
 
-                if (request.Url.OriginalString.Contains("/p"))
+                DroneName selectedDrone = DroneName.A;
+                string drone;
+                if (queryStrings.TryGetValue("drone", out drone))
                 {
-                    actions.Enqueue(delegate () { GetComponent<KMBombModule>().HandlePass(); });
+                    drone = drone.ToUpperInvariant();
+                    foreach (DroneName possibleDrone in Enum.GetValues(typeof(DroneName)))
+                    {
+                        if (possibleDrone.ToString() == drone)
+                        {
+                            selectedDrone = possibleDrone;
+                            break;
+                        }
+                    }
                 }
-                else if (request.Url.OriginalString.Contains("/s"))
+
+                string attemptNumString;
+                string move = null;
+                string jam = null;
+                if (queryStrings.TryGetValue("attempt", out attemptNumString) && this.attemptNumber.ToString() == attemptNumString)
                 {
-                    actions.Enqueue(delegate () { CauseStrike(); });
+                    if (queryStrings.TryGetValue("move", out move))
+                    {
+                        foreach (Direction possibleDirection in Enum.GetValues(typeof(Direction)))
+                        {
+                            if (string.Equals(move, possibleDirection.ToString(), StringComparison.OrdinalIgnoreCase))
+                            {
+                                actions.Enqueue(delegate () { ChangeDronePosition(selectedDrone, possibleDirection); });
+                                break;
+                            }
+                        }
+                    }
+                    else if (queryStrings.TryGetValue("jam", out jam))
+                    {
+                        foreach (JamType possibleJamType in JamTypes.All())
+                        {
+                            if (string.Equals(jam, possibleJamType.DisplayName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                actions.Enqueue(delegate () { Jam(possibleJamType); });
+                                break;
+                            }
+                        }
+                    }
                 }
+
+                responseString += selectedDrone.ToString() + " " + move ?? "(no move)" + " " + jam ?? "(no jam)";
             }
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
@@ -438,6 +493,11 @@ public class WifiModModule : MonoBehaviour
         public static JamType TwoG = new JamType { DisplayName = "2G" };
         public static JamType ThreeG = new JamType { DisplayName = "3G" };
         public static JamType FourG = new JamType { DisplayName = "4G" };
+
+        public static IEnumerable<JamType> All()
+        {
+            return new List<JamType> { TwoG, ThreeG, FourG };
+        }
     }
 
     public struct JamType
