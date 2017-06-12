@@ -162,6 +162,11 @@ public class WifiModModule : MonoBehaviour
 
     void ChangeDronePosition(DroneName droneName, Direction direction)
     {
+        if (!GetAllowedMoves(this.dronePositions[droneName]).Contains(direction))
+        {
+            return;
+        }
+
         UpdateDotColor(this.dronePositions[droneName], Color.white);
         UpdateDotText(this.dronePositions[droneName], "");
         this.dronePositions[droneName] = GetMoveDestination(this.dronePositions[droneName], direction);
@@ -451,10 +456,7 @@ public class WifiModModule : MonoBehaviour
                         {
                             if (string.Equals(move, possibleDirection.ToString(), StringComparison.OrdinalIgnoreCase))
                             {
-                                if (GetAllowedMoves(this.dronePositions[selectedDrone]).Contains(possibleDirection))
-                                {
-                                    actions.Enqueue(delegate () { ChangeDronePosition(selectedDrone, possibleDirection); });
-                                }
+                                actions.Enqueue(delegate () { ChangeDronePosition(selectedDrone, possibleDirection); });
                                 break;
                             }
                         }
