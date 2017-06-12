@@ -380,9 +380,9 @@ public class WifiModModule : MonoBehaviour
 
     private bool PointOnLineSegment(Position bomber, Position p0, Position p1)
     {
-        var AB = Math.Sqrt((p1.R - p0.R) * (p1.R - p0.R) + (p1.C - p0.C) * (p1.C - p0.C));
-        var AP = Math.Sqrt((bomber.R - p0.R) * (bomber.R - p0.R) + (bomber.C - p0.C) * (bomber.C - p0.C));
-        var PB = Math.Sqrt((p1.R - bomber.R) * (p1.R - bomber.R) + (p1.C - bomber.C) * (p1.C - bomber.C));
+        var AB = Math.Sqrt((p1.RealR - p0.RealR) * (p1.RealR - p0.RealR) + (p1.RealC - p0.RealC) * (p1.RealC - p0.RealC));
+        var AP = Math.Sqrt((bomber.RealR - p0.RealR) * (bomber.RealR - p0.RealR) + (bomber.RealC - p0.RealC) * (bomber.RealC - p0.RealC));
+        var PB = Math.Sqrt((p1.RealR - bomber.RealR) * (p1.RealR - bomber.RealR) + (p1.RealC - bomber.RealC) * (p1.RealC - bomber.RealC));
         if (AB == AP + PB)
         {
             return true;
@@ -394,13 +394,13 @@ public class WifiModModule : MonoBehaviour
     // Stolen from: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
     private bool PointInTriangle(Position bomber, Position p0, Position p1, Position p2)
     {
-        var s = p0.C * p2.R - p0.R * p2.C + (p2.C - p0.C) * bomber.R + (p0.R - p2.R) * bomber.C;
-        var t = p0.R * p1.C - p0.C * p1.R + (p0.C - p1.C) * bomber.R + (p1.R - p0.R) * bomber.C;
+        var s = p0.RealC * p2.RealR - p0.RealR * p2.RealC + (p2.RealC - p0.RealC) * bomber.RealR + (p0.RealR - p2.RealR) * bomber.RealC;
+        var t = p0.RealR * p1.RealC - p0.RealC * p1.RealR + (p0.RealC - p1.RealC) * bomber.RealR + (p1.RealR - p0.RealR) * bomber.RealC;
 
         if ((s < 0) != (t < 0))
             return false;
 
-        var A = -p1.C * p2.R + p0.C * (p2.R - p1.R) + p0.R * (p1.C - p2.C) + p1.R * p2.C;
+        var A = -p1.RealC * p2.RealR + p0.RealC * (p2.RealR - p1.RealR) + p0.RealR * (p1.RealC - p2.RealC) + p1.RealR * p2.RealC;
         if (A < 0.0)
         {
             s = -s;
@@ -554,6 +554,22 @@ public class WifiModModule : MonoBehaviour
     {
         public int R;
         public int C;
+
+        public double RealR
+        {
+            get
+            {
+                return R * 0.12275;
+            }
+        }
+
+        public double RealC
+        {
+            get
+            {
+                return C * 0.166;
+            }
+        }
     }
 
     enum Direction
