@@ -22,6 +22,10 @@ public class WifiModModule : MonoBehaviour
         D
     }
 
+    List<DroneName> TwoGDrones = new List<DroneName> { DroneName.B, DroneName.C, DroneName.D };
+    List<DroneName> ThreeGDrones = new List<DroneName> { DroneName.A, DroneName.C, DroneName.D };
+    List<DroneName> FourGDrones = new List<DroneName> { DroneName.A, DroneName.B, DroneName.C };
+
     public static List<int> usedPorts = new List<int>();
     Transform droneMap;
     Transform[,] dots;
