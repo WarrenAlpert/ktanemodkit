@@ -26,12 +26,30 @@ public class WifiModModule : MonoBehaviour
     void Init()
     {
         GetComponent<KMBombModule>().OnActivate += OnActivate;
+        KMGameplayRoom room = GetComponent<KMGameplayRoom>();
+        if (room != null)
+        {
+            room.OnLightChange += OnLightChange;
+        }
     }
 
     void OnActivate()
     {
+        // Running in test harness
+        if (GetComponent<KMGameplayRoom>() == null)
+        {
+            OnLightChange(true);
+        }
+    }
+
+    public void OnLightChange(bool on)
+    {
         connectionText = this.transform.FindChild("Model").FindChild("ConnectionBackground").GetComponentInChildren<TextMesh>();
-        connectionText.text = Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
+        connectionText.text = !on ? "" : Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
+
+        TextMesh m = this.transform.FindChild("Model").FindChild("DroneMap").FindChild("1,1").GetComponentInChildren<TextMesh>();
+        m.text = !on ? "" : "A";
+
     }
 
     void Awake()
