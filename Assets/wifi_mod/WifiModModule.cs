@@ -138,6 +138,12 @@ public class WifiModModule : MonoBehaviour
         }
     }
 
+    void CausePass()
+    {
+        GetComponent<KMBombModule>().HandlePass();
+        gameActive = false;
+    }
+
     void CauseStrike()
     {
         if (StartingBomberMoveInterval - BomberMoveIntervalStrikePenalty >= BomberMoveIntervalMin)
@@ -195,7 +201,7 @@ public class WifiModModule : MonoBehaviour
         else
         {
             this.connectionText.color = Color.white;
-            GetComponent<KMBombModule>().HandlePass();
+            CausePass();
         }
     }
 
@@ -319,7 +325,7 @@ public class WifiModModule : MonoBehaviour
             port = random.Next(8050, 8100);
         }
         while (usedPorts.Contains(port));
-
+        //port = 8050;
         this.droneMap = this.transform.FindChild("Model").FindChild("DroneMap");
         this.dots = new Transform[NumRows, NumColumns];
         this.ipAndPort = Dns.GetHostAddresses(Dns.GetHostName()).Single(i => i.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString() + ":" + port.ToString();
@@ -507,25 +513,63 @@ public class WifiModModule : MonoBehaviour
                 responseString +=
                     "<b>Selected Drone:</b> " + selectedDrone.ToString() + " " +
                     "<b>Last Move:</b> " + (move != null && move.Count() > 0 ? move : "(no move)") + " " +
-                    "<b>Jam Fired?:</b> " + (jam != null && jam.Count() > 0 ? jam : "(no jam)") +
-                    "<br/><br/><b>Drones</b><br/>";
+                    "<br/><b>Jam Fired?:</b> " + (jam != null && jam.Count() > 0 ? jam : "(no jam)") +
+                    "<br/><br/><br/>";
+
+                responseString += "<table><tr><th colspan=\"4\"><b>Drones</b></th></tr><tr>";
 
                 foreach (DroneName droneName in Enum.GetValues(typeof(DroneName)))
                 {
-                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&drone=" + droneName.ToString() + "\">" + droneName.ToString() + "</a><br/>";
+                    responseString += "<td>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&drone=" + droneName.ToString() + "\">" + droneName.ToString() + "</a>&nbsp;&nbsp;&nbsp;&nbsp;<br/></td>";
                 }
+                responseString += "</tr></table>";
 
                 responseString += "<br/><b>Controls:</b><br/>";
-                foreach (Direction direction in Enum.GetValues(typeof(Direction)))
-                {
-                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&drone=" + selectedDrone.ToString() + "&move=" + direction.ToString() + "\">" + direction.ToString() + "</a><br/>";
-                }
+                responseString += "<table>";
 
-                responseString += "<br/><b>Fire Jammer!</b><br/>";
+                responseString += "<tr><td></td><td>";
+                responseString += "<center>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&drone="
+                                  + selectedDrone.ToString() + "&move=" + Direction.Up.ToString() + "\">"
+                                  + Direction.Up.ToString() + "</a>&nbsp;&nbsp;&nbsp;&nbsp;</center><br/>";
+                responseString += "</td><td></td></tr>";
+
+                responseString += "<tr>";
+
+                responseString += "<td>";
+                responseString += "<center>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&drone="
+                                  + selectedDrone.ToString() + "&move=" + Direction.Left.ToString() + "\">"
+                                  + Direction.Left.ToString() + "</a>&nbsp;&nbsp;&nbsp;&nbsp;</center><br/>";
+                responseString += "</td>";
+
+                responseString += "<td>";
+                responseString += "</td>";
+
+                responseString += "<td>";
+                responseString += "<center>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&drone="
+                                  + selectedDrone.ToString() + "&move=" + Direction.Right.ToString() + "\">"
+                                  + Direction.Right.ToString() + "</a>&nbsp;&nbsp;&nbsp;&nbsp;</center><br/>";
+                responseString += "</td>";
+
+                responseString += "</td><td></td></tr>";
+
+
+                responseString += "<tr><td></td><td>";
+                responseString += "<center>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&drone="
+                                  + selectedDrone.ToString() + "&move=" + Direction.Down.ToString() + "\">"
+                                  + Direction.Down.ToString() + "</a>&nbsp;&nbsp;&nbsp;&nbsp;</center><br/>";
+                responseString += "</td><td></td></tr>";
+
+                responseString += "</table>";
+
+                responseString += "<table><tr><th colspan=\"4\"><b>Fire Jammer!</b></th></tr><tr>";
+
                 foreach (JamType jamType in JamTypes.All())
                 {
-                    responseString += "<a href=\"?attempt=" + this.attemptNumber + "&jam=" + jamType.DisplayName + "\">" + jamType.DisplayName + "</a><br/>";
+                    responseString += "<td>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"?attempt=" + this.attemptNumber + "&jam=" + jamType.DisplayName + "\">" + jamType.DisplayName + "</a>&nbsp;&nbsp;&nbsp;&nbsp;<br/></td>";
                 }
+
+                responseString += "</tr></table>";
+
 
                 responseString += "</body></html>";
             }
