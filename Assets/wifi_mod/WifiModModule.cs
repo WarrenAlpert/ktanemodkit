@@ -88,7 +88,7 @@ public class WifiModModule : MonoBehaviour
     {
         attemptNumber++;
 
-        this.bomberRunning = true;
+        this.bomberRunning = false;
         bomberMoveTimeRemaining = StartingBomberMoveInterval;
 
         List<string> queryList = GetComponent<KMBombInfo>().QueryWidgets(KMBombInfo.QUERYKEY_GET_SERIAL_NUMBER, null);
