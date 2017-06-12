@@ -22,9 +22,12 @@ public class WifiModModule : MonoBehaviour
         D
     }
 
-    List<DroneName> TwoGDrones = new List<DroneName> { DroneName.B, DroneName.C, DroneName.D };
-    List<DroneName> ThreeGDrones = new List<DroneName> { DroneName.A, DroneName.C, DroneName.D };
-    List<DroneName> FourGDrones = new List<DroneName> { DroneName.A, DroneName.B, DroneName.C };
+    Dictionary<JamType, List<DroneName>> DroneCapabilities = new Dictionary<JamType, List<DroneName>>
+    {
+        { JamTypes.TwoG , new List<DroneName> { DroneName.B, DroneName.C, DroneName.D } },
+        { JamTypes.ThreeG , new List<DroneName> { DroneName.A, DroneName.C, DroneName.D } },
+        { JamTypes.FourG , new List<DroneName> { DroneName.A, DroneName.B, DroneName.C } }
+    };
 
     public static List<int> usedPorts = new List<int>();
     Transform droneMap;
@@ -108,6 +111,8 @@ public class WifiModModule : MonoBehaviour
 
         GetComponent<KMBombModule>().HandleStrike();
     }
+
+
 
     public void OnLightChange(bool on)
     {
@@ -370,6 +375,18 @@ public class WifiModModule : MonoBehaviour
         Right,
         Up,
         Down
+    }
+
+    public static class JamTypes
+    {
+        public static JamType TwoG = new JamType { DisplayName = "2G" };
+        public static JamType ThreeG = new JamType { DisplayName = "3G" };
+        public static JamType FourG = new JamType { DisplayName = "4G" };
+    }
+
+    public struct JamType
+    {
+        public string DisplayName;
     }
 
     public class Worker
