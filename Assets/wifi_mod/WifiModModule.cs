@@ -32,6 +32,7 @@ public class WifiModModule : MonoBehaviour
     int port;
     bool gameOver = false;
 
+    System.Random random;
     Thread workerThread;
 
     Queue<Action> actions;
@@ -71,11 +72,12 @@ public class WifiModModule : MonoBehaviour
                                     { DroneName.D, new Position{ r = 1, c = 1 } },
                                 };
 
-        UnityEngine.Random.InitState(bomberPosition.r);
+        int row = random.Next(0, NumRows);
+
         bomberPosition = new Position
         {
-            r = UnityEngine.Random.Range(2, NumRows - 1),
-            c = UnityEngine.Random.Range(2, NumColumns - 1),
+            r = row,
+            c = random.Next(row < 3 ? 3 : 0, NumColumns),
         };
 
         this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
@@ -117,7 +119,8 @@ public class WifiModModule : MonoBehaviour
 
         do
         {
-            port = UnityEngine.Random.Range(8050, 8099);
+            this.random = new System.Random();
+            port = random.Next(8050, 8100);
         }
         while (usedPorts.Contains(port));
 
