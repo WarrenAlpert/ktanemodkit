@@ -13,6 +13,8 @@ public class WifiModModule : MonoBehaviour
     float BomberMoveIntervalStrikePenalty = 3;
     float BombererMoveIntervalMin = 4;
 
+    int BomberDistanceFromEdges = 1;
+
     enum DroneName
     {
         A,
@@ -162,7 +164,7 @@ public class WifiModModule : MonoBehaviour
 
     void ChangeDronePosition(DroneName droneName, Direction direction)
     {
-        if (!GetAllowedMoves(this.dronePositions[droneName]).Contains(direction))
+        if (!GetAllowedMoves(this.dronePositions[droneName], false).Contains(direction))
         {
             return;
         }
@@ -205,7 +207,7 @@ public class WifiModModule : MonoBehaviour
 
     private void ChangeBomberPosition()
     {
-        HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition);
+        HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition, true);
 
         UpdateDotColor(this.bomberPosition, Color.white);
         this.bomberPosition = GetMoveDestination(this.bomberPosition, possibleMoves.ElementAt(random.Next(0, possibleMoves.Count)));
@@ -278,23 +280,23 @@ public class WifiModModule : MonoBehaviour
         }
     }
 
-    private HashSet<Direction> GetAllowedMoves(Position fromPosition)
+    private HashSet<Direction> GetAllowedMoves(Position fromPosition, bool isBomber)
     {
         HashSet<Direction> allowedDirections = new HashSet<Direction>();
 
-        if (GetMoveDestination(fromPosition, Direction.Up).R >= 0)
+        if (GetMoveDestination(fromPosition, Direction.Up).R >= (0 + (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Up);
         }
-        if (GetMoveDestination(fromPosition, Direction.Left).C >= 0)
+        if (GetMoveDestination(fromPosition, Direction.Left).C >= (0 + (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Left);
         }
-        if (GetMoveDestination(fromPosition, Direction.Down).R <= NumRows - 1)
+        if (GetMoveDestination(fromPosition, Direction.Down).R <= NumRows - (1 - (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Down);
         }
-        if (GetMoveDestination(fromPosition, Direction.Right).C <= NumColumns - 1)
+        if (GetMoveDestination(fromPosition, Direction.Right).C <= NumColumns - (1 - (isBomber ? BomberDistanceFromEdges : 0)))
         {
             allowedDirections.Add(Direction.Right);
         }
