@@ -399,7 +399,7 @@ public class WifiModModule : MonoBehaviour
 
             if (gameActive && !request.Url.OriginalString.Contains("favicon"))
             {
-                responseString += "<html><body>";
+                responseString += "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"></head><body>";
 
                 Dictionary<string, string> queryStrings = new Dictionary<string, string>();
                 string query = request.Url.Query;
