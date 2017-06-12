@@ -107,9 +107,73 @@ public class WifiModModule : MonoBehaviour
         }
     }
 
-    void ChangePosition(DroneName droneName, Direction direction)
+    void ChangeDronePosition(DroneName droneName, Direction direction)
     {
 
+    }
+
+    private void ChangeBomberPosition()
+    {
+        HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition);
+
+        this.bomberPosition = GetMoveDestination(this.bomberPosition, possibleMoves.ElementAt(random.Next(0, possibleMoves.Count)));
+    }
+
+    private Position GetMoveDestination(Position fromPosition, Direction direction)
+    {
+        switch (direction)
+        {
+            case (Direction.Up):
+                return new Position
+                {
+                    r = fromPosition.r - 1,
+                    c = fromPosition.c
+                };
+            case (Direction.Down):
+                return new Position
+                {
+                    r = fromPosition.r + 1,
+                    c = fromPosition.c
+                };
+            case (Direction.Left):
+                return new Position
+                {
+                    r = fromPosition.r - 1,
+                    c = fromPosition.c
+                };
+            case (Direction.Right):
+                return new Position
+                {
+                    r = fromPosition.r + 1,
+                    c = fromPosition.c
+                };
+            default:
+                throw new ArgumentOutOfRangeException("Unexpected direction to move in.");
+        }
+    }
+
+    private HashSet<Direction> GetAllowedMoves(Position fromPosition)
+    {
+        HashSet<Direction> allowedDirections = new HashSet<Direction>();
+
+        if (GetMoveDestination(fromPosition, Direction.Up).r >= 0)
+        {
+            allowedDirections.Add(Direction.Up);
+        }
+        if (GetMoveDestination(fromPosition, Direction.Left).c >= 0)
+        {
+            allowedDirections.Add(Direction.Left);
+        }
+        if (GetMoveDestination(fromPosition, Direction.Up).r <= NumRows - 1)
+        {
+            allowedDirections.Add(Direction.Down);
+        }
+        if (GetMoveDestination(fromPosition, Direction.Up).r <= NumColumns - 1)
+        {
+            allowedDirections.Add(Direction.Right);
+        }
+
+        return allowedDirections;
     }
 
     void Awake()
