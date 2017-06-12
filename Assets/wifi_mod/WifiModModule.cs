@@ -8,9 +8,6 @@ using System.Linq;
 
 public class WifiModModule : MonoBehaviour
 {
-    const int NumRows = 4;
-    const int NumColumns = 6;
-
     // In seconds
     float StartingBomberMoveInterval = 10;
     float BomberMoveIntervalStrikePenalty = 3;
@@ -23,6 +20,9 @@ public class WifiModModule : MonoBehaviour
         C,
         D
     }
+
+    const int NumRows = 4;
+    const int NumColumns = 6;
 
     Dictionary<JamType, List<DroneName>> DroneCapabilities = new Dictionary<JamType, List<DroneName>>
     {
