@@ -109,7 +109,9 @@ public class WifiModModule : MonoBehaviour
 
     void ChangeDronePosition(DroneName droneName, Direction direction)
     {
+        this.dronePositions[droneName] = GetMoveDestination(this.dronePositions[droneName], direction);
 
+        EvaluateCollisions();
     }
 
     private void ChangeBomberPosition()
@@ -117,6 +119,39 @@ public class WifiModModule : MonoBehaviour
         HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition);
 
         this.bomberPosition = GetMoveDestination(this.bomberPosition, possibleMoves.ElementAt(random.Next(0, possibleMoves.Count)));
+
+        EvaluateCollisions();
+    }
+
+    private void EvaluateCollisions()
+    {
+        // Inneficient in multiple ways I know... I'm rushing...
+        foreach (DroneName droneName in Enum.GetValues(typeof(DroneName)))
+        {
+            Position position = this.dronePositions[droneName];
+
+            if (position.r == bomberPosition.r && position.c == bomberPosition.c)
+            {
+                CauseStrike();
+                return;
+            }
+
+            foreach (DroneName otherDroneName in Enum.GetValues(typeof(DroneName)))
+            {
+                if (droneName == otherDroneName)
+                {
+                    continue;
+                }
+
+                Position otherPosition = this.dronePositions[otherDroneName];
+
+                if (position.r == otherPosition.r && position.c == otherPosition.c)
+                {
+                    CauseStrike();
+                    return;
+                }
+            }
+        }
     }
 
     private Position GetMoveDestination(Position fromPosition, Direction direction)
