@@ -10,6 +10,10 @@ public class WifiModModule : MonoBehaviour
 {
     const int NumRows = 4;
     const int NumColumns = 6;
+
+    // In seconds
+    const float BomberMoveInterval = 10;
+
     enum DroneName
     {
         A,
@@ -30,7 +34,8 @@ public class WifiModModule : MonoBehaviour
     Color connectionTextColor;
     string ipAndPort;
     int port;
-    bool gameOver = false;
+    bool gameActive = false;
+    float bomberMoveTimeRemaining;
 
     System.Random random;
     Thread workerThread;
@@ -55,14 +60,18 @@ public class WifiModModule : MonoBehaviour
 
     void OnActivateCaller()
     {
+        gameActive = true;
+
         // (callOnLightChange) == (Running in test harness)
         OnReset(GetComponent<KMGameplayRoom>() == null);
     }
 
     void OnReset(bool callOnLightChange)
     {
+        bomberMoveTimeRemaining = BomberMoveInterval;
+
         this.connectionText.color = connectionTextColor;
-        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
+        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
 
         this.dronePositions = new Dictionary<DroneName, Position>
                                 {
@@ -80,7 +89,7 @@ public class WifiModModule : MonoBehaviour
             c = random.Next(row < 3 ? 3 : 0, NumColumns),
         };
 
-        this.dots[bomberPosition.r, bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
+        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
 
         if (callOnLightChange)
         {
@@ -118,7 +127,9 @@ public class WifiModModule : MonoBehaviour
     {
         HashSet<Direction> possibleMoves = GetAllowedMoves(bomberPosition);
 
+        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.white;
         this.bomberPosition = GetMoveDestination(this.bomberPosition, possibleMoves.ElementAt(random.Next(0, possibleMoves.Count)));
+        this.dots[this.bomberPosition.r, this.bomberPosition.c].GetComponent<SpriteRenderer>().color = Color.red;
 
         EvaluateCollisions();
     }
@@ -173,14 +184,14 @@ public class WifiModModule : MonoBehaviour
             case (Direction.Left):
                 return new Position
                 {
-                    r = fromPosition.r - 1,
-                    c = fromPosition.c
+                    r = fromPosition.r,
+                    c = fromPosition.c - 1
                 };
             case (Direction.Right):
                 return new Position
                 {
-                    r = fromPosition.r + 1,
-                    c = fromPosition.c
+                    r = fromPosition.r,
+                    c = fromPosition.c + 1
                 };
             default:
                 throw new ArgumentOutOfRangeException("Unexpected direction to move in.");
@@ -203,7 +214,7 @@ public class WifiModModule : MonoBehaviour
         {
             allowedDirections.Add(Direction.Down);
         }
-        if (GetMoveDestination(fromPosition, Direction.Up).r <= NumColumns - 1)
+        if (GetMoveDestination(fromPosition, Direction.Right).r <= NumColumns - 1)
         {
             allowedDirections.Add(Direction.Right);
         }
@@ -253,6 +264,16 @@ public class WifiModModule : MonoBehaviour
             Action action = actions.Dequeue();
             action();
         }
+
+        if (gameActive)
+        {
+            bomberMoveTimeRemaining -= Time.deltaTime;
+            if (bomberMoveTimeRemaining <= 0)
+            {
+                bomberMoveTimeRemaining = BomberMoveInterval;
+                ChangeBomberPosition();
+            }
+        }
     }
 
     void OnDestroy()
@@ -281,7 +302,7 @@ public class WifiModModule : MonoBehaviour
             // Construct a response.
             string responseString = "";
 
-            if (!gameOver && !request.Url.OriginalString.Contains("favicon"))
+            if (gameActive && !request.Url.OriginalString.Contains("favicon"))
             {
                 if (this.connectionTextColor != Color.green)
                 {
@@ -311,12 +332,12 @@ public class WifiModModule : MonoBehaviour
 
     protected void OnBombExplodes()
     {
-        gameOver = true;
+        gameActive = false;
     }
 
     protected void OnBombDefused()
     {
-        gameOver = true;
+        gameActive = false;
     }
 
     struct Position
