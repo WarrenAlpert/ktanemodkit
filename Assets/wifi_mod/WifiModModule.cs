@@ -122,11 +122,11 @@ public class WifiModModule : MonoBehaviour
                                     { DroneName.D, new Position{ R = 1, C = 1 } },
                                 };
 
-        int row = random.Next(BomberDistanceFromEdges, NumRows);
+        int row = random.Next(BomberDistanceFromEdges, NumRows - BomberDistanceFromEdges);
 
         bomberPosition = new Position
         {
-            R = row - BomberDistanceFromEdges,
+            R = row,
             C = random.Next(row < 3 ? 3 : BomberDistanceFromEdges, NumColumns - BomberDistanceFromEdges),
         };
 
