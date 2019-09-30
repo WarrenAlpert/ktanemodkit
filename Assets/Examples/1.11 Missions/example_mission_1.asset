@@ -11,7 +11,7 @@ MonoBehaviour:
   m_Script: {fileID: -548183353, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
   m_Name: example_mission_1
   m_EditorClassIdentifier: 
-  DisplayName: Very Easy Mission
+  DisplayName: Wifi Mod Mission!
   Description: Wifi Mod Mission!
   GeneratorSetting:
     TimeLimit: 300
@@ -29,10 +29,4 @@ MonoBehaviour:
       ComponentTypes: 03000000
       SpecialComponentType: 0
       ModTypes: []
-    - Count: 1
-      AllowedSources: 2
-      ComponentTypes: 
-      SpecialComponentType: 0
-      ModTypes:
-      - wifi_mod
   PacingEventsEnabled: 0
